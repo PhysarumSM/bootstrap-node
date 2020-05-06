@@ -24,15 +24,15 @@ func TestGenerateKey(test *testing.T) {
 	}{
 		// Negative test cases
 		{"ExistingKey", "rsa", 2048, tmpFile.Name(), true},
-		{"RSA-small-bits", "rsa", 1024, "~/asdf", true},
-		{"Wrong-algo", "rsaa", 2048, "~/asdf", true},
+		{"RSA-small-bits", "rsa", 1024, "asdf", true},
+		{"Wrong-algo", "rsaa", 2048, "asdf", true},
 
 		// Positive test cases
-		{"RSA-basic", "rsa", 2048, "~/asdf", false},
-		{"ECDSA-basic", "ecdsa", 2048, "~/asdf", false},
-		{"Ed25519-basic", "ecdsa", 0, "~/asdf", false},
-		{"Ed25519-basic", "Ed25519", 0, "~/asdf", false},
-		{"Secp256k1-basic", "Secp256k1", 0, "~/asdf", false},
+		{"RSA-basic", "rsa", 2048, "asdf", false},
+		{"ECDSA-basic", "ecdsa", 2048, "asdf", false},
+		{"Ed25519-basic", "Ed25519", 0, "asdf", false},
+		{"Secp256k1-basic", "Secp256k1", 0, "asdf", false},
+		{"TildeExpansion", "RSA", 2048, "~/asdf", false},
 	}
 
 	for _, testCase := range testCases {
@@ -51,6 +51,13 @@ func TestGenerateKey(test *testing.T) {
 
 			// This assumes expandTilde was fully tested...
 			if keyFilePath, err := expandTilde(testCase.keyFile); err == nil {
+				// For positive tests, check that the key exists
+				_, err := os.Stat(keyFilePath)
+				if !testCase.shouldErr && os.IsNotExist(err) {
+					test.Errorf("Failed case (%s); Expected key file (%s) does not exist.",
+						testCase.name, keyFilePath)
+				}
+
 				os.Remove(keyFilePath)
 			}
 		})
