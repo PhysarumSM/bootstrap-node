@@ -10,6 +10,8 @@ import (
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-kad-dht"
 	"github.com/multiformats/go-multiaddr"
+
+	"github.com/Multi-Tier-Cloud/common/util"
 )
 
 var (
@@ -35,7 +37,7 @@ func main() {
 	var err error
 	if *genKey || *ephemeral {
 		fmt.Println("Generating a new key...")
-		priv, err = generatePrivKey(*algo, *bits)
+		priv, err = util.GeneratePrivKey(*algo, *bits)
 		if err != nil {
 			fmt.Printf("ERROR: Unable to generate key\n%v", err)
 			os.Exit(1)
@@ -43,7 +45,7 @@ func main() {
 	}
 
 	if *genKey && !(*ephemeral) {
-		if err = storePrivKeyToFile(priv, *keyFile); err != nil {
+		if err = util.StorePrivKeyToFile(priv, *keyFile); err != nil {
 			fmt.Printf("ERROR: Unable to save key to file %s\n", *keyFile)
 			os.Exit(1)
 		}
@@ -51,13 +53,13 @@ func main() {
 	}
 
 	if !(*ephemeral) {
-		if !fileExists(*keyFile) {
+		if !util.FileExists(*keyFile) {
 			fmt.Printf("ERROR: Key (%s) does not exist.\n", *keyFile)
 			fmt.Printf("Ensure path is correct or generate a new key with -genkey.\n")
 			os.Exit(1)
 		}
 
-		priv, err = loadPrivKeyFromFile(*keyFile)
+		priv, err = util.LoadPrivKeyFromFile(*keyFile)
 		if err != nil {
 			fmt.Printf("ERROR: Unable to load key from file\n%v", err)
 			os.Exit(1)
