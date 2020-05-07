@@ -15,19 +15,6 @@ const (
 	RSA_MIN_BITS = 2048
 )
 
-var (
-	// Map algos to enum from libp2p-core/crypto/key
-	// See: https://github.com/libp2p/go-libp2p-core/blob/master/crypto/key.go
-	// TODO: Figure out future-proof way to maintain this? i.e. avoid manual
-	//       modification here if libp2p adds new algos.
-	keyTypes = map[string]int{
-		"rsa":       crypto.RSA,
-		"ed25519":   crypto.Ed25519,
-		"secp256k1": crypto.Secp256k1,
-		"ecdsa":     crypto.ECDSA,
-	}
-)
-
 // Expands tilde to absolute path
 // Currently only works if path begins with tilde, not somewhere in the middle
 func expandTilde(path string) (string, error) {
@@ -58,36 +45,29 @@ func fileExists(filePath string) bool {
 	return true
 }
 
-func generateKey(algo string, bits int, keyFile string) error {
+func generatePrivKey(algo string, bits int) (crypto.PrivKey, error) {
 	var keyType int
-	for algoName, algoID := range keyTypes {
+	for algoName, algoID := range pb.KeyType_value {
 		if strings.EqualFold(algoName, algo) {
-			keyType = algoID
+			keyType = int(algoID)
 			break
 		}
 		keyType = -1
 	}
 
 	if keyType < 0 {
-		return fmt.Errorf("Unknown algorithm")
+		return nil, fmt.Errorf("Unknown algorithm")
 	} else if keyType == crypto.RSA && bits < RSA_MIN_BITS {
-		return fmt.Errorf("Number of bits for RSA must be at least %d", RSA_MIN_BITS)
+		return nil, fmt.Errorf("Number of bits for RSA must be at least %d", RSA_MIN_BITS)
 	}
 
-	// Generate key, then write to file
+	// Generate private key
 	priv, _, err := crypto.GenerateKeyPair(keyType, bits)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	// TODO: Ideally this next part should be moved out of the function.
-	//       It'll make the function more flexible/reusable, as users may
-	//       want to generate a key but not store it.
-	if err = storePrivKeyToFile(priv, keyFile); err != nil {
-		return err
-	}
-
-	return nil
+	return priv, nil
 }
 
 // Write private key to file in Base 64 format

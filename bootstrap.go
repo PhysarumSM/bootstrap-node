@@ -29,12 +29,16 @@ func main() {
 
 	if *genKey {
 		fmt.Println("Generating a new key...")
-		err := generateKey(*algo, *bits, *keyFile)
+		priv, err := generatePrivKey(*algo, *bits)
 		if err != nil {
 			fmt.Printf("ERROR: Unable to generate key\n%v", err)
 			os.Exit(1)
 		}
 
+		if err = storePrivKeyToFile(priv, *keyFile); err != nil {
+			fmt.Printf("ERROR: Unable to save key to file %s\n", *keyFile)
+			os.Exit(1)
+		}
 		fmt.Println("New key is stored at:", *keyFile)
 	}
 
