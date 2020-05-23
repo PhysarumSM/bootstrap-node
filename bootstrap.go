@@ -6,11 +6,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/crypto"
-	"github.com/libp2p/go-libp2p-kad-dht"
-	"github.com/multiformats/go-multiaddr"
 
+	"github.com/Multi-Tier-Cloud/common/p2pnode"
 	"github.com/Multi-Tier-Cloud/common/util"
 )
 
@@ -66,21 +64,22 @@ func main() {
 		}
 	}
 
-	listenAddrs, err := multiaddr.NewMultiaddr("/ip4/0.0.0.0/tcp/4001")
-	if err != nil {
-		panic(err)
-	}
+	// TODO: Remove hard-coded listen address
+	config := p2pnode.NewConfig()
+	config.ListenAddrs = append(config.ListenAddrs, "/ip4/0.0.0.0/tcp/4001")
+	config.PrivKey = priv
+	config.BootstrapPeers = []string{} // We're bootsrapping, remove any default peers
 
 	ctx := context.Background()
-	node, err := libp2p.New(ctx, libp2p.ListenAddrs(listenAddrs), libp2p.Identity(priv))
+	_, err = p2pnode.NewNode(ctx, config)
 	if err != nil {
-		panic(err)
-	}
-	fmt.Println("This node: ", node.ID().Pretty(), " ", node.Addrs())
-	_, err = dht.New(ctx, node)
-	if err != nil {
+		fmt.Println("ERROR: Unable to create new node\n", err)
 		panic(err)
 	}
 
-	select {}
+	select {
+	case <-ctx.Done(): // Likely will never happen...
+		fmt.Println("ERROR: Main background context ended\n", ctx.Err())
+		return
+	}
 }
