@@ -21,6 +21,7 @@ import (
 	"os"
 
 	"github.com/libp2p/go-libp2p-core/crypto"
+	"github.com/libp2p/go-libp2p-core/peer"
 
 	"github.com/Multi-Tier-Cloud/common/p2pnode"
 	"github.com/Multi-Tier-Cloud/common/util"
@@ -78,17 +79,26 @@ func main() {
 		}
 	}
 
-	// TODO: Remove hard-coded listen address
 	config := p2pnode.NewConfig()
 	config.ListenAddrs = append(config.ListenAddrs, "/ip4/0.0.0.0/tcp/4001")
 	config.PrivKey = priv
-	config.BootstrapPeers = []string{} // We're bootsrapping, remove any default peers
 
 	ctx := context.Background()
-	_, err = p2pnode.NewNode(ctx, config)
+	node, err := p2pnode.NewNode(ctx, config)
 	if err != nil {
 		fmt.Println("ERROR: Unable to create new node\n", err)
 		panic(err)
+	}
+
+	// Print multiaddress (for copying and pasting to other services)
+	peerInfo := peer.AddrInfo{
+		ID:    node.Host.ID(),
+		Addrs: node.Host.Addrs(),
+	}
+	addrs, err := peer.AddrInfoToP2pAddrs(&peerInfo)
+	fmt.Println("P2P addresses for this node:")
+	for _, addr := range addrs {
+		fmt.Println("\t", addr)
 	}
 
 	select {
