@@ -22,6 +22,7 @@ import (
 
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/libp2p/go-libp2p-core/pnet"
 
 	"github.com/Multi-Tier-Cloud/common/p2pnode"
 	"github.com/Multi-Tier-Cloud/common/util"
@@ -44,10 +45,15 @@ var (
 )
 
 func main() {
+	var err error
+	var psk *pnet.PSK
+	if psk, err = util.AddPSKFlag(); err != nil {
+		fmt.Println("Error: Unable to add PSK flag")
+		os.Exit(1)
+	}
 	flag.Parse()
 
 	var priv crypto.PrivKey
-	var err error
 	if *genKey || *ephemeral {
 		fmt.Println("Generating a new key...")
 		priv, err = util.GeneratePrivKey(*algo, *bits)
@@ -82,6 +88,7 @@ func main() {
 	config := p2pnode.NewConfig()
 	config.ListenAddrs = append(config.ListenAddrs, "/ip4/0.0.0.0/tcp/4001")
 	config.PrivKey = priv
+	config.PSK = *psk
 
 	ctx := context.Background()
 	node, err := p2pnode.NewNode(ctx, config)
